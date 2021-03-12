@@ -22,7 +22,5 @@ if __name__ == '__main__':
         if timedelta.seconds > TRADE_AGE:
             print(f"LAST TRADE IS {timedelta.seconds} SECONDS OLD!!!!  LAST TRADE:  ", trade_time)
             print(f"Table: {table_name}")
-        else:
-            print(trade_id)
 
         time.sleep(FREQUENCY)
