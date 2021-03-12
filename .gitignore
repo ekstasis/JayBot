@@ -1,0 +1,9 @@
+*.pyc
+*.swo
+*.swp
+.idea/
+.pytest_cache/
+.spyproject/
+__pycache__
+*.cprof
+.nfs*
