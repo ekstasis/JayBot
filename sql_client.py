@@ -17,7 +17,7 @@ databases = {
 }
 
 
-def connection(database):
+def connection(database=None):
     if database is None:
         info = databases[socket.gethostname()]
     else:
