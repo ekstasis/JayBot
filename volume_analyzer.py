@@ -19,15 +19,18 @@ class Results:
         self.largest_buy_order = 0
         self.largest_sell_order = 0
 
+    def over_threshold(self, threshold):
+        return self.total_buys > threshold or self.total_sells > threshold
+
     def report(self):
         start_time = self.start_time.time().strftime('%H:%M:%S')
         end_time = self.end_time.time().strftime('%H:%M:%S')
         lines = [
             f'{start_time} -> {end_time}',
-            f'Buys: {self.total_buys}\nSells: {self.total_sells}',
-            f'Largest trades: {self.largest_buy_trade} (buy)  {self.largest_sell_trade} (sell)',
-            f'Largest orders: {self.largest_buy_order} (buy)  {self.largest_sell_order} (sell)',
-            f'ohlc: {self.open}/{self.high}/{self.low}/{self.close}']
+            f'Coins bought: {self.total_buys}\nCoins sold: {self.total_sells}',
+            f'Largest trades:\n{self.largest_buy_trade} (buy)\n{self.largest_sell_trade} (sell)',
+            f'Largest orders:\n{self.largest_buy_order} (buy)\n{self.largest_sell_order} (sell)',
+            f'O: {self.open}\nH: {self.high}\nL: {self.low}\nC: {self.close}']
         return '\n'.join(lines)
 
     def sql_query(self):
@@ -37,10 +40,14 @@ class Results:
 class PeriodAnalyzer:
     """ Calculate various statistics for a given period of trades """
 
-    def __init__(self, raw_trades):
-        self.raw_trades = raw_trades
+    def __init__(self):
+        self.raw_trades = None
         self.trades_df = None
         self.results = Results()
+
+    def set_trades(self, raw_trades):
+        self.raw_trades = raw_trades
+        self.create_dataframe()
 
     def analyze(self):
         self.create_dataframe()
@@ -68,9 +75,9 @@ class PeriodAnalyzer:
         self.trades_df.sort_index(inplace=True)
 
     def calculate_totals(self):
-        counts = self.trades_df['type'].value_counts()
-        self.results.total_buys = counts['buy']
-        self.results.total_sells = counts['sell']
+        df = self.trades_df
+        self.results.total_buys = df[df.type == 'buy']['size'].sum()
+        self.results.total_sells = df[df.type == 'sell']['size'].sum()
 
     def calculate_largest_trades(self):
         df = self.trades_df
@@ -87,19 +94,19 @@ class PeriodAnalyzer:
         self.results.largest_buy_order = buy_takers.sum()['size'].max()
 
 
-end = dt.datetime.utcnow()
-timedelta = dt.timedelta(minutes=1)
-start = end - timedelta
-
-qry = "SELECT * from xlm_matches "
-qry += f"WHERE time BETWEEN '{start}' AND '{end}' "
-qry += "ORDER BY trade_id asc"
-
-trades = db.do_query(qry)
-
-analyzer = PeriodAnalyzer(raw_trades=trades)
-analyzer.analyze()
-results = analyzer.results
-df = analyzer.trades_df
-pd.options.display.max_columns = 20
-pd.options.display.width = 180
+# end = dt.datetime.utcnow()
+# timedelta = dt.timedelta(minutes=1)
+# start = end - timedelta
+#
+# qry = "SELECT * from xlm_matches "
+# qry += f"WHERE time BETWEEN '{start}' AND '{end}' "
+# qry += "ORDER BY trade_id asc"
+#
+# trades = db.do_query(qry)
+#
+# analyzer = PeriodAnalyzer(raw_trades=trades)
+# analyzer.analyze()
+# results = analyzer.results
+# df = analyzer.trades_df
+# pd.options.display.max_columns = 20
+# pd.options.display.width = 180

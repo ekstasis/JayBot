@@ -2,8 +2,11 @@ import datetime
 import time
 import sys
 
-import sql_client as sc
 import telegram
+
+import sql_client as sc
+import volume_analyzer as va
+
 
 FREQUENCY = 60  # seconds
 TRADE_AGE = 60  # seconds
@@ -17,7 +20,7 @@ TEST_SIZE_THRESHOLD = 300000
 
 
 class Checker:
-    def __init__(self, display_only):
+    def __init__(self, display_only, analyzer):
         self.trade_period = FREQUENCY
         self.table = TABLE
         self.trades = None
@@ -26,6 +29,7 @@ class Checker:
         self.test_threshold = TEST_SIZE_THRESHOLD
         self.start_time = datetime.datetime.utcnow()
         self.display_only = display_only
+        self.analyzer: va.PeriodAnalyzer= analyzer
 
     def get_last_trades(self):
         now = datetime.datetime.utcnow()
@@ -34,36 +38,18 @@ class Checker:
         self.trades = sc.do_query(qry)
 
     def analyze_trades(self):
-        sells = 0
-        buys = 0
-        for trade in self.trades:
-            size = trade['size']
-            trade_type = trade['type']
-            if trade_type == 'buy':
-                buys += size
-            else:
-                sells += size
+        self.analyzer.set_trades(self.trades)
+        self.analyzer.analyze()
+        results = self.analyzer.results
 
-        if sells > self.test_threshold or buys > self.test_threshold:
-            start = self.trades[0]['time'].time().strftime("%H:%M:%S")
-            end = self.trades[-1]['time'].time().strftime("%H:%M:%S")
-            start_price = self.trades[0]['price']
-            end_price = self.trades[-1]['price']
+        if results.over_threshold(TEST_SIZE_THRESHOLD):
+            msg = results.report()
+            print(f'\n{msg}')
 
-            msg = f'Buys: {buys:>7}'
-            msg += f'\nSells: {sells:>7}\n'
-            msg += f'{start_price} - {end_price}\n'
-            msg += f'{start} - {end}\n'
-            print()
-            print(msg)
-
-            if self.display_only:
-                return
-            else:
+            if not self.display_only:
                 self.alert_bot.sendMessage(chat_id=ALERT_CHAT_ID, text=msg)
 
-                if sells > self.whale_threshold or buys > self.whale_threshold:
-                    pass
+                if results.over_threshold(WHALE_SIZE_THRESHOLD):
                     self.alert_bot.sendMessage(chat_id=WHALE_CHAT_ID, text=msg)
 
     def check_last_trade_is_not_old(self):
@@ -106,7 +92,8 @@ if __name__ == '__main__':
 
     print(f'Checking every {FREQUENCY} seconds.  Trade age limit: {TRADE_AGE}.  Table: {TABLE}')
 
-    checker = Checker(display_only)
+    analyzer = va.PeriodAnalyzer()
+    checker = Checker(display_only, analyzer=analyzer)
 
     while True:
         checker.get_last_trades()
