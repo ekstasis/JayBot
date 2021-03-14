@@ -1,5 +1,6 @@
 import datetime
 import time
+import sys
 
 import sql_client as sc
 import telegram
@@ -16,7 +17,7 @@ TEST_SIZE_THRESHOLD = 300000
 
 
 class Checker:
-    def __init__(self):
+    def __init__(self, display_only):
         self.trade_period = FREQUENCY
         self.table = TABLE
         self.trades = None
@@ -24,6 +25,7 @@ class Checker:
         self.whale_threshold = WHALE_SIZE_THRESHOLD
         self.test_threshold = TEST_SIZE_THRESHOLD
         self.start_time = datetime.datetime.utcnow()
+        self.display_only = display_only
 
     def get_last_trades(self):
         now = datetime.datetime.utcnow()
@@ -54,12 +56,15 @@ class Checker:
             msg += f'{start} - {end}\n'
             print()
             print(msg)
-            self.alert_bot.sendMessage(chat_id=ALERT_CHAT_ID, text=msg)
 
-            if sells > self.whale_threshold or buys > self.whale_threshold:
-                pass
-                # self.alert_bot.sendMessage(chat_id=WHALE_CHAT_ID, text=msg)
+            if self.display_only:
+                return
+            else:
+                self.alert_bot.sendMessage(chat_id=ALERT_CHAT_ID, text=msg)
 
+                if sells > self.whale_threshold or buys > self.whale_threshold:
+                    pass
+                    self.alert_bot.sendMessage(chat_id=WHALE_CHAT_ID, text=msg)
 
     def check_last_trade_is_not_old(self):
         try:
@@ -71,12 +76,16 @@ class Checker:
         trade_time = trade['time']
         trade_id = trade['trade_id']
         now = datetime.datetime.utcnow()
-        timedelta = (now- trade_time).seconds
+        timedelta = (now - trade_time).seconds
 
         if timedelta > TRADE_AGE:
             msg = f'The last recorded trade ({trade_id}) is {timedelta} seconds old!!'
-            self.alert_bot.sendMessage(chat_id=ERROR_CHAT_ID, text=msg)
             print(f'\n********************\n{msg}\n********************')
+
+            if display_only:
+                return
+            else:
+                self.alert_bot.sendMessage(chat_id=ERROR_CHAT_ID, text=msg)
 
     def heartbeat(self):
         now = datetime.datetime.utcnow()
@@ -85,9 +94,19 @@ class Checker:
 
 
 if __name__ == '__main__':
+    args = sys.argv
+    display_only = False
+    if len(args) >= 2:
+        display_only = args[1] == 'display_only'
+
+    if display_only:
+        print("\n*** Display Only ***\n")
+    else:
+        print("\n*** SENDING TO TELEGRAM ***\n")
+
     print(f'Checking every {FREQUENCY} seconds.  Trade age limit: {TRADE_AGE}.  Table: {TABLE}')
 
-    checker = Checker()
+    checker = Checker(display_only)
 
     while True:
         checker.get_last_trades()
