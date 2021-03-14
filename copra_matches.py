@@ -1,5 +1,5 @@
 import asyncio
-import dateutil.parser
+import time
 import sys
 
 from copra.websocket import Channel, Client
@@ -17,10 +17,11 @@ def write_record(message, conn, should_test):
     trade_type = "buy" if message['side'] == "sell" else "sell"
     trade_id = int(message['trade_id'])
 
-    table = 'xlm_matches' if not should_test else 'xlm_matches_test'
+    table = 'xlm_matches' if not should_test else 'xlm_matches_test2'
     sql = "INSERT INTO %s" % table
     sql += " SET type = '%s', size = '%s', price = '%s', trade_id = '%s', sequence = '%s', "
-    sql = sql % (trade_type, message['size'], message['price'], trade_id, message['sequence'])
+    sql += " maker_order_id = '%s', taker_order_id = '%s', "
+    sql = sql % (trade_type, message['size'], message['price'], trade_id, message['sequence'], message['maker_order_id'], message['taker_order_id'])
     sql += " time = STR_TO_DATE('%s', '%s');" % (message['time'], "%Y-%m-%dT%H:%i:%s.%fZ")
 
     rows = cursor.execute(sql)
@@ -64,9 +65,11 @@ if __name__ == '__main__':
     if len(args) >= 2:
         test = args[1] == 'test'
 
-    # for opt, arg in opts:
-    #     if opt == '--test':
-    #         test = True
+    if test:
+        print("\n*** TESTING ***\n")
+    else:
+        print("\n*** LIVE LIVE LIVE LIVE ***\n")
+        time.sleep(5)
 
     product_id = "XLM-USD"
     event_loop = asyncio.get_event_loop()
