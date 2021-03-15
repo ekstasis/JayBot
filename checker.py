@@ -14,9 +14,9 @@ ALERT_CHAT_ID = -511211282
 ERROR_CHAT_ID = -533383147
 WHALE_CHAT_ID = -504882847
 TOKEN = '1694974417:AAE8NAZRqD-AQBaXkw2tJjgnC7NCIa6Ss0I'
-TABLE = 'xlm_matches'
+TABLE = 'matches_xlm'
 WHALE_SIZE_THRESHOLD = 300000
-TEST_SIZE_THRESHOLD = 300000
+TEST_SIZE_THRESHOLD =  300000
 
 
 class Checker:
@@ -33,8 +33,10 @@ class Checker:
 
     def get_last_trades(self):
         now = datetime.datetime.utcnow()
-        begin = now - datetime.timedelta(seconds=self.trade_period)
-        qry = f"select * from {self.table} where time between '{begin}' and '{now}' ORDER BY trade_id ASC"
+        minute_edge = now.replace(second=0, microsecond=0)
+
+        begin = minute_edge - datetime.timedelta(seconds=self.trade_period)
+        qry = f"select * from {self.table} where time between '{begin}' and '{minute_edge}' ORDER BY trade_id ASC"
         self.trades = sc.do_query(qry)
 
     def analyze_trades(self):
@@ -96,9 +98,9 @@ if __name__ == '__main__':
     checker = Checker(display_only, analyzer=analyzer)
 
     while True:
+        seconds_into_minute = time.localtime().tm_sec
+        time.sleep(60-seconds_into_minute)
         checker.get_last_trades()
         checker.analyze_trades()
         checker.check_last_trade_is_not_old()
         checker.heartbeat()
-
-        time.sleep(FREQUENCY)

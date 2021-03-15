@@ -1,8 +1,6 @@
 import datetime as dt
 import pandas as pd
 
-import sql_client as db
-
 
 class Results:
     def __init__(self):
@@ -73,6 +71,7 @@ class PeriodAnalyzer:
         self.trades_df.index = pd.DatetimeIndex(self.trades_df['time'])
         self.trades_df.drop('time', axis=1, inplace=True)
         self.trades_df.sort_index(inplace=True)
+        self.trades_df['size'] = self.trades_df['size'].astype(float)
 
     def calculate_totals(self):
         df = self.trades_df

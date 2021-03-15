@@ -6,30 +6,48 @@ from copra.websocket import Channel, Client
 import sql_client as sc
 
 
+products = {'XLM-USD': 'matches_xlm',
+            'ETH-USD': 'matches_eth',
+            'BTC-USD': 'matches_btc'}
+
+
 def write_record(message, conn, should_test):
     if message['type'] != 'match':
         if message['type'] == 'subscriptions':
             print(message)
+            if not should_test:
+                time.sleep(5)
         return
 
-    cursor = conn.cursor()
 
     trade_type = "buy" if message['side'] == "sell" else "sell"
     trade_id = int(message['trade_id'])
+    product_id = message['product_id']
 
-    table = 'xlm_matches' if not should_test else 'xlm_matches_test2'
+    if should_test:
+        table = 'matches_test'
+    else:
+        table = products[product_id]
+
     sql = "INSERT INTO %s" % table
     sql += " SET type = '%s', size = '%s', price = '%s', trade_id = '%s', sequence = '%s', "
-    sql += " maker_order_id = '%s', taker_order_id = '%s', "
-    sql = sql % (trade_type, message['size'], message['price'], trade_id, message['sequence'], message['maker_order_id'], message['taker_order_id'])
+    sql += " maker_order_id = '%s', taker_order_id = '%s', product_id = '%s', "
+    sql = sql % (trade_type, message['size'], message['price'], trade_id, message['sequence'],
+                 message['maker_order_id'], message['taker_order_id'], message['product_id'])
     sql += " time = STR_TO_DATE('%s', '%s');" % (message['time'], "%Y-%m-%dT%H:%i:%s.%fZ")
 
-    rows = cursor.execute(sql)
+    rows = conn.cursor().execute(sql)
     if rows != 1:
         raise Exception('Failed to write to database')
     else:
-        print(f"Wrote trade {trade_id} to table '{table}'")
+        print(f"Wrote trade {trade_id} to table '{table}' ({product_id})")
         conn.commit()
+        # written_size = sc.do_query_with(conn, f"SELECT size FROM {table} WHERE trade_id = '{trade_id}'")[0]['size']
+        # msg_size = float(message['size'])
+        # if written_size == msg_size:
+        #     print("good")
+        # else:
+        #     print("BABABADBABDKJSLDFLKSJDFLKSJDFLKSJDFLKSJDFLKSJDFLKSDJF")
 
 
 class WSClient(Client):
@@ -37,7 +55,6 @@ class WSClient(Client):
         self.message_handler = msg_handler
         self.conn = conn
         self.test = should_test
-        self.prev_trade_id = 0
         super().__init__(loop, channels)
 
     def set_up(self, msg_handler, conn):
@@ -45,16 +62,6 @@ class WSClient(Client):
         self.conn = conn
 
     def on_message(self, message):
-
-        if message['type'] == 'last_match':
-            self.prev_trade_id = int(message['trade_id'])
-
-        if message['type'] == 'match':
-            trade_id = int(message['trade_id'])
-            if trade_id - self.prev_trade_id > 1:
-                print(f"SKIPPED TRADES:  last: {trade_id} prev: {self.prev_trade_id}")
-            self.prev_trade_id = trade_id
-
         self.message_handler(message, self.conn, self.test)
 
 
@@ -69,16 +76,13 @@ if __name__ == '__main__':
         print("\n*** TESTING ***\n")
     else:
         print("\n*** LIVE LIVE LIVE LIVE ***\n")
-        time.sleep(5)
 
-    product_id = "XLM-USD"
     event_loop = asyncio.get_event_loop()
-    channel = Channel('matches', product_id)
+    channel_list = Channel('matches', list(products.keys()))
     db_conn = sc.connection()
-    client = WSClient(loop=event_loop, channels=channel, msg_handler=write_record, conn=db_conn, should_test=test)
+    client = WSClient(loop=event_loop, channels=channel_list, msg_handler=write_record, conn=db_conn, should_test=test)
 
     try:
-        print("Running on XLM_USD ...")
         event_loop.run_forever()
     except KeyboardInterrupt:
         event_loop.run_until_complete(client.close())
