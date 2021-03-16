@@ -4,11 +4,7 @@ import sys
 
 from copra.websocket import Channel, Client
 import sql_client as sc
-
-
-products = {'XLM-USD': 'matches_xlm',
-            'ETH-USD': 'matches_eth',
-            'BTC-USD': 'matches_btc'}
+from products import products
 
 
 def write_record(message, conn, should_test):

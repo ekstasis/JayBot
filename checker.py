@@ -6,6 +6,7 @@ import telegram
 
 import sql_client as sc
 import volume_analyzer as va
+from products import products
 
 
 FREQUENCY = 60  # seconds

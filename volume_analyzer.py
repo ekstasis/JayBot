@@ -4,12 +4,10 @@ import pandas as pd
 
 class Results:
     def __init__(self):
+        self.product = 'XLM-USD'
         self.start_time: dt.datetime = None
         self.end_time: dt.datetime = None
-        self.open= 0.0
-        self.high = 0.0
-        self.low = 0.0
-        self.close = 0.0
+        self.largest_order_price = 0.0
         self.total_buys = 0
         self.total_sells = 0
         self.largest_buy_trade = 0
@@ -23,12 +21,21 @@ class Results:
     def report(self):
         start_time = self.start_time.time().strftime('%H:%M:%S')
         end_time = self.end_time.time().strftime('%H:%M:%S')
+
+        total_buys = f'{int(self.total_buys / 1000):,}K'
+        total_sells = f'{int(self.total_sells / 1000):,}K'
+        largest_buy_trade = f'{int(self.largest_buy_trade / 1000):,}K'
+        largest_sell_trade = f'{int(self.largest_sell_trade / 1000):,}K'
+        largest_buy_order = f'{int(self.largest_buy_order / 1000):,}K'
+        largest_sell_order = f'{int(self.largest_sell_order / 1000):,}K'
+
         lines = [
             f'{start_time} -> {end_time}',
-            f'Coins bought: {self.total_buys}\nCoins sold: {self.total_sells}',
-            f'Largest trades:\n{self.largest_buy_trade} (buy)\n{self.largest_sell_trade} (sell)',
-            f'Largest orders:\n{self.largest_buy_order} (buy)\n{self.largest_sell_order} (sell)',
-            f'O: {self.open}\nH: {self.high}\nL: {self.low}\nC: {self.close}']
+            f'Coins bought: {total_buys}\nCoins sold: {total_sells}',
+            f'Largest trades:\n{largest_buy_trade} (buy)\n{largest_sell_trade} (sell)',
+            f'Largest orders:\n{largest_buy_order} (buy)\n{largest_sell_order} (sell)',
+            f'Largest order price: ${self.largest_order_price:,.6}'
+        ]
         return '\n'.join(lines)
 
     def sql_query(self):
@@ -49,18 +56,11 @@ class PeriodAnalyzer:
 
     def analyze(self):
         self.create_dataframe()
-        self.get_ohlc()
+        # self.get_price()
         self.get_time_range()
         self.calculate_totals()
         self.calculate_largest_trades()
         self.calc_largest_orders()
-
-    def get_ohlc(self):
-        df = self.trades_df
-        self.results.open = df.iloc[0].price
-        self.results.high = df.price.max()
-        self.results.low = df.price.min()
-        self.results.close = df.iloc[-1].price
 
     def get_time_range(self):
         self.results.start_time = self.trades_df.index[0]
@@ -92,6 +92,8 @@ class PeriodAnalyzer:
         self.results.largest_sell_order = sell_takers.sum()['size'].max()
         self.results.largest_buy_order = buy_takers.sum()['size'].max()
 
+        largest_order_id = df.groupby('taker_order_id').sum()['size'].idxmax()
+        self.results.largest_order_price = df[df.taker_order_id == largest_order_id].iloc[0]['price']
 
 # end = dt.datetime.utcnow()
 # timedelta = dt.timedelta(minutes=1)
