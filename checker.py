@@ -5,6 +5,8 @@ import socket
 import traceback
 
 import telegram
+import pdb_attach
+pdb_attach.listen(50000)  # Listen on port 50000.
 
 import sql_client as sc
 import volume_analyzer as va
