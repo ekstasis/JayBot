@@ -1,6 +1,7 @@
 import datetime
 import time
 import sys
+import traceback
 
 import telegram
 
@@ -37,7 +38,7 @@ class Checker:
         minute_edge = now.replace(second=0, microsecond=0)
 
         begin = minute_edge - datetime.timedelta(seconds=self.trade_period)
-        qry = f"select * from {self.table} where time between '{begin}' and '{minute_edge}' ORDER BY trade_id ASC"
+        qry = f"SELECT * FROM {self.table} WHERE time >= '{begin}' and time < '{minute_edge}' ORDER BY trade_id ASC"
         self.trades = sc.do_query(qry)
 
     def analyze_trades(self):
@@ -47,6 +48,7 @@ class Checker:
 
         if results.over_threshold(TEST_SIZE_THRESHOLD):
             msg = results.report()
+
             print(f'\n{msg}')
 
             if not self.display_only:
@@ -101,7 +103,17 @@ if __name__ == '__main__':
     while True:
         seconds_into_minute = time.localtime().tm_sec
         time.sleep(60-seconds_into_minute)
-        checker.get_last_trades()
-        checker.analyze_trades()
-        checker.check_last_trade_is_not_old()
-        checker.heartbeat()
+
+        try:
+            checker.get_last_trades()
+            checker.analyze_trades()
+            checker.check_last_trade_is_not_old()
+            checker.heartbeat()
+
+        except KeyError:
+            traceback.print_exc()
+            print(checker.analyzer.raw_trades)
+            print(checker.analyzer.trades_df.head())
+
+        except Exception:
+            traceback.print_exc()

@@ -1,4 +1,6 @@
 import datetime as dt
+import traceback
+
 import pandas as pd
 
 
@@ -49,6 +51,8 @@ class PeriodAnalyzer:
         self.raw_trades = None
         self.trades_df = None
         self.results = Results()
+        pd.options.display.max_columns = 20
+        pd.options.display.width = 180
 
     def set_trades(self, raw_trades):
         self.raw_trades = raw_trades
@@ -69,6 +73,7 @@ class PeriodAnalyzer:
     def create_dataframe(self):
         self.trades_df = pd.DataFrame(self.raw_trades)
         self.trades_df.index = pd.DatetimeIndex(self.trades_df['time'])
+
         self.trades_df.drop('time', axis=1, inplace=True)
         self.trades_df.sort_index(inplace=True)
         self.trades_df['size'] = self.trades_df['size'].astype(float)
