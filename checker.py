@@ -1,13 +1,13 @@
 import datetime
 import time
 import sys
+import socket
 import traceback
 
 import telegram
 
 import sql_client as sc
 import volume_analyzer as va
-from products import products
 
 
 FREQUENCY = 60  # seconds
@@ -22,11 +22,11 @@ TEST_SIZE_THRESHOLD =  300000
 
 
 class Checker:
-    def __init__(self, display_only, analyzer):
+    def __init__(self, display_only, analyzer, alert_bot):
         self.trade_period = FREQUENCY
         self.table = TABLE
         self.trades = None
-        self.alert_bot = telegram.Bot(token=TOKEN)
+        self.alert_bot = alert_bot
         self.whale_threshold = WHALE_SIZE_THRESHOLD
         self.test_threshold = TEST_SIZE_THRESHOLD
         self.start_time = datetime.datetime.utcnow()
@@ -98,7 +98,9 @@ if __name__ == '__main__':
     print(f'Checking every {FREQUENCY} seconds.  Trade age limit: {TRADE_AGE}.  Table: {TABLE}')
 
     analyzer = va.PeriodAnalyzer()
-    checker = Checker(display_only, analyzer=analyzer)
+    alert_bot = telegram.Bot(token=TOKEN)
+    checker = Checker(display_only, analyzer=analyzer, alert_bot=alert_bot)
+    host = socket.gethostname()
 
     while True:
         seconds_into_minute = time.localtime().tm_sec
@@ -111,9 +113,13 @@ if __name__ == '__main__':
             checker.heartbeat()
 
         except KeyError:
+            alert_bot.sendMessage(chat_id=ERROR_CHAT_ID, text=f'Error on {host}')
             traceback.print_exc()
-            print(checker.analyzer.raw_trades)
-            print(checker.analyzer.trades_df.head())
+            if checker.analyzer.raw_trades is not None:
+                print(checker.analyzer.raw_trades)
+            if checker.analyzer.trades_df is not None:
+                print(checker.analyzer.trades_df.head())
 
         except Exception:
+            alert_bot.sendMessage(chat_id=ERROR_CHAT_ID, text=f'Error on {host}')
             traceback.print_exc()
