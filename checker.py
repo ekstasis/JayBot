@@ -98,6 +98,7 @@ if __name__ == '__main__':
         print("\n*** SENDING TO TELEGRAM ***\n")
 
     print(f'Checking every {FREQUENCY} seconds.  Trade age limit: {TRADE_AGE}.  Table: {TABLE}')
+    print(f'Whale threshold:  {WHALE_SIZE_THRESHOLD}')
 
     analyzer = va.PeriodAnalyzer()
     alert_bot = telegram.Bot(token=TOKEN)
