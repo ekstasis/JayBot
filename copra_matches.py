@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
 
     if socket.gethostname() == 'debian':
-        product_list = products['XLM-USD']
+        product_list = 'XLM-USD'
     else:
         product_list = list(products.keys())
 
