@@ -1,6 +1,7 @@
 import asyncio
 import time
 import sys
+import socket
 
 from copra.websocket import Channel, Client
 import sql_client as sc
@@ -12,7 +13,7 @@ def write_record(message, conn, should_test):
         if message['type'] == 'subscriptions':
             print(message)
             if not should_test:
-                time.sleep(5)
+                time.sleep(3)
         return
 
 
@@ -64,17 +65,21 @@ class WSClient(Client):
 if __name__ == '__main__':
     args = sys.argv
 
-    test = False
-    if len(args) >= 2:
-        test = args[1] == 'test'
+    test = len(args) >= 2 and args[1] == 'test'
 
     if test:
         print("\n*** TESTING ***\n")
     else:
         print("\n*** LIVE LIVE LIVE LIVE ***\n")
 
+
+    if socket.gethostname() == 'debian':
+        product_list = products['XLM-USD']
+    else:
+        product_list = list(products.keys())
+
+    channel_list = Channel('matches', product_list)
     event_loop = asyncio.get_event_loop()
-    channel_list = Channel('matches', list(products.keys()))
     db_conn = sc.connection()
     client = WSClient(loop=event_loop, channels=channel_list, msg_handler=write_record, conn=db_conn, should_test=test)
 
