@@ -13,6 +13,10 @@ databases = {
     'debian': {'host': '127.0.0.1', 'unix_socket': '/var/run/mysqld/mysqld.sock',
                'user': 'james', 'password': 'doingbots',
                'db': 'JayBot', 'charset': 'utf8mb4',
+               'cursorclass': pms.cursors.DictCursor},
+    'debian_from_mac': {'host': '192.168.1.121', 'port': 3306,
+               'user': 'james', 'password': 'doingbots',
+               'db': 'JayBot', 'charset': 'utf8mb4',
                'cursorclass': pms.cursors.DictCursor}
 }
 
