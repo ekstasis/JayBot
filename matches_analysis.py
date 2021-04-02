@@ -8,45 +8,52 @@ import sql_client as db
 pd.options.display.max_columns = 20
 pd.options.display.width = 180
 
-# start = '2021-03-13 23:33:00.000000'
-# end = '2021-03-13 23:33:35.000000'
-end = dt.datetime.utcnow()
-timedelta = dt.timedelta(minutes=10)
-start = end - timedelta
+start_date = '2021-04-02'
+end_date = '2021-04-02'
+start_time = '00:36:00.000000'
+end_time =   '00:39:00.000000'
+start = f'{start_date} {start_time}'
+end = f'{end_date} {end_time}'
+# end = dt.datetime.utcnow()
+# timedelta = dt.timedelta(minutes=10)
+# start = end - timedelta
 
-qry = "SELECT trade_id, time, type, size, price, taker_order_id from xlm_matches "
+qry = "SELECT * from matches_xlm "
 qry += f"WHERE time BETWEEN '{start}' AND '{end}' "
 qry += "ORDER BY trade_id asc"
 print(qry)
 
-result = db.do_query(qry)
+conn = db.connection('debian_from_mac')
+
+result = db.do_query_with(conn, qry)
 
 df = pd.DataFrame(result)
 df.index = pd.DatetimeIndex(df['time'])
 df.drop('time', axis=1, inplace=True)
-cols = ['trade_id', 'type', 'size', 'price', 'taker_order_id']
+cols = ['trade_id', 'type', 'size', 'price', 'maker_order_id', 'taker_order_id']
 df = df[cols]
+df[["price", "size"]] = df[["price", "size"]].apply(pd.to_numeric)
 df['buys'] = df['size'].where(df.type == 'buy')
 df['sells'] = df['size'].where(df.type == 'sell')
+df['pct'] = df.price.pct_change()
 
-all_trades = df[['buys', 'sells', 'price', 'size']]
+# df_secs = df.resample('H')
 
-fig, axes = plt.subplots(nrows=2, ncols=1, gridspec_kw={'height_ratios': [3, 1]})
+# sums = df_secs.sum()[['buys', 'sells']]
+# counts = df_secs.count()[['buys', 'sells']]
+# price_plot = df_secs.mean()['price']
+# counts['price'] = price_plot
 
-big_trades = all_trades
-big_trades.sells.plot(color='red', grid=True, label='Sell Size', style='.', ax=axes[0])
-big_trades.buys.plot(color='green', grid=True, label='Buy Size', style='.', ax=axes[0])
-big_trades.price.plot(color='black', grid=True, label='Price', ax=axes[1])
+# fig, axes = plt.subplots(nrows=2, ncols=1, gridspec_kw={'height_ratios': [3, 1]})
 
-# df1.plot(ax=axes[0,0])
-# df2.plot(ax=axes[0,1])
-# plt.figure(figsize=(12,5))
-# plt.xlabel('Number of requests every 10 minutes')
-
-# ax3 = trades.price.plot(color='black', grid=True, secondary_y=True, label='Price', style='.', marker='o', alpha=0.2)
-# h1, l1 = ax1.get_legend_handles_labels()
-# h2, l2 = ax2.get_legend_handles_labels()
+# counts[['buys', 'sells']].plot(kind='bar', grid=True, label='Sum difference', ax=axes[0])
+# count_diffs.plot(kind='bar', color='red', grid=True, label='Count difference', ax=axes[0], secondary_y=True)
+# df_secs.count().buys.plot(color='green', grid=True, label='Buy Size', style='.', ax=axes[0])
+# counts['price'].plot(color='black', grid=True, label='Price', ax=axes[0], secondary_y=True)
 
 
-# plt.legend(h1+h2, l1+l2, loc=2)
-plt.show()
+takers_who_sold = df[df['type'] == 'sell'].groupby('taker_order_id')
+takers_who_bought = df[df['type'] == 'buy'].groupby('taker_order_id')
+makers_who_bought = df[df['type'] == 'sell'].groupby('maker_order_id')
+makers_who_sold = df[df['type'] == 'buy'].groupby('maker_order_id')
+
