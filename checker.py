@@ -20,7 +20,7 @@ WHALE_CHAT_ID = -504882847
 TOKEN = '1694974417:AAE8NAZRqD-AQBaXkw2tJjgnC7NCIa6Ss0I'
 TABLE = 'matches_xlm'
 WHALE_SIZE_THRESHOLD = 600000
-TEST_SIZE_THRESHOLD = 60000000
+# TEST_SIZE_THRESHOLD = 6
 
 
 class Checker:
@@ -30,7 +30,7 @@ class Checker:
         self.trades = None
         self.alert_bot = alert_bot
         self.whale_threshold = WHALE_SIZE_THRESHOLD
-        self.test_threshold = TEST_SIZE_THRESHOLD
+        # self.test_threshold = TEST_SIZE_THRESHOLD
         self.start_time = datetime.datetime.utcnow()
         self.display_only = should_display_only
         self.analyzer: va.PeriodAnalyzer = analyzer
@@ -50,16 +50,13 @@ class Checker:
         self.analyzer.analyze()
         results = self.analyzer.results
 
-        if results.over_threshold(TEST_SIZE_THRESHOLD):
+        if results.over_threshold(WHALE_SIZE_THRESHOLD):
             msg = results.report()
 
             print(f'\n{msg}')
 
             if not self.display_only:
-                self.alert_bot.sendMessage(chat_id=ALERT_CHAT_ID, text=msg)
-
-                if results.over_threshold(WHALE_SIZE_THRESHOLD):
-                    self.alert_bot.sendMessage(chat_id=WHALE_CHAT_ID, text=msg)
+                self.alert_bot.sendMessage(chat_id=WHALE_CHAT_ID, text=msg)
 
     def check_last_trade_is_not_old(self):
         try:
