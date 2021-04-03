@@ -15,9 +15,9 @@ databases = {
                'db': 'JayBot', 'charset': 'utf8mb4',
                'cursorclass': pms.cursors.DictCursor},
     'debian_from_mac': {'host': '192.168.1.121', 'port': 3306,
-               'user': 'james', 'password': 'doingbots',
-               'db': 'JayBot', 'charset': 'utf8mb4',
-               'cursorclass': pms.cursors.DictCursor}
+                        'user': 'james', 'password': 'doingbots',
+                        'db': 'JayBot', 'charset': 'utf8mb4',
+                        'cursorclass': pms.cursors.DictCursor}
 }
 
 
@@ -65,7 +65,6 @@ def do_query_with(conn, query):
 def write_records(query, bot='devbot'):
     """ Executes update/insert query and returns # of rows effected
     """
-    rows = None
     conn = connection(bot)
     try:
         with conn.cursor() as cursor:
@@ -93,7 +92,7 @@ def test_connection(conn, test_query=None):
     return result
 
 
-def write_list_of_queries(queries: List[str], conn: pms.connections.Connection=None, bot: str='config'):
+def write_list_of_queries(queries: List[str], conn: pms.connections.Connection = None, bot: str = 'config'):
     if conn is None:
         conn = connection(bot)
     try:
@@ -110,10 +109,8 @@ def write_list_of_queries(queries: List[str], conn: pms.connections.Connection=N
 
 def get_connect_info(conn: pms.connections.Connection):
     keys = ['host', 'port', 'user', 'password', 'db', 'charset', 'cursorclass']
-    info = {key:conn.__dict__[key] for key in keys}
+    info = {key: conn.__dict__[key] for key in keys}
     return info
-
-
 
 
 """ Example from https://pymysql.readthedocs.io/en/latest/user/examples.html

@@ -8,16 +8,16 @@ import sql_client as db
 pd.options.display.max_columns = 20
 pd.options.display.width = 180
 
-start_date = '2021-04-02'
+start_date = '2021-04-03'
 end_date = start_date
 # end_date = '2021-04-02'
 
-start_time = '00:00:00.000000'
-end_time =   '04:00:00.000000'
+start_time = '17:00:00.000000'
+end_time =   '19:00:00.000000'
 
 start = f'{start_date} {start_time}'
-end = f'{end_date} {end_time}'
-# end = dt.datetime.utcnow()
+# end = f'{end_date} {end_time}'
+end = dt.datetime.utcnow()
 # timedelta = dt.timedelta(minutes=10)
 # start = end - timedelta
 
@@ -52,9 +52,9 @@ df['cum_sum_maker_sell'] = df['maker_sells'].cumsum().fillna(method='ffill')
 # fig, axes = plt.subplots(nrows=3, ncols=1, gridspec_kw={'height_ratios': [1, 1, 1]})
 fig, axes = plt.subplots(nrows=2, ncols=1, gridspec_kw={'height_ratios': [1, 1]})
 
-diff = False
+diff = True
 if diff:
-    (df.cum_sum_maker_sell - df.cum_sum_maker_buy).plot(color='red', grid=True, style='.', ax=axes[0])
+    (df.cum_sum_maker_buy - df.cum_sum_maker_sell).plot(color='green', grid=True, style='.', ax=axes[0])
 else:
     df['cum_sum_maker_sell'].plot(color='red', grid=True, style='.', ax=axes[0])
     df['cum_sum_maker_buy'].plot(color='green', grid=True, style='.', ax=axes[0])

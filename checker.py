@@ -5,8 +5,8 @@ import socket
 import traceback
 
 import telegram
-import pdb_attach
-pdb_attach.listen(50000)  # Listen on port 50000.
+# import pdb_attach
+# pdb_attach.listen(50000)  # Listen on port 50000.
 
 import sql_client as sc
 import volume_analyzer as va
@@ -20,11 +20,11 @@ WHALE_CHAT_ID = -504882847
 TOKEN = '1694974417:AAE8NAZRqD-AQBaXkw2tJjgnC7NCIa6Ss0I'
 TABLE = 'matches_xlm'
 WHALE_SIZE_THRESHOLD = 600000
-TEST_SIZE_THRESHOLD =  400000
+TEST_SIZE_THRESHOLD = 6
 
 
 class Checker:
-    def __init__(self, display_only, analyzer, alert_bot):
+    def __init__(self, should_display_only, analyzer, alert_bot, conn):
         self.trade_period = FREQUENCY
         self.table = TABLE
         self.trades = None
@@ -32,8 +32,9 @@ class Checker:
         self.whale_threshold = WHALE_SIZE_THRESHOLD
         self.test_threshold = TEST_SIZE_THRESHOLD
         self.start_time = datetime.datetime.utcnow()
-        self.display_only = display_only
-        self.analyzer: va.PeriodAnalyzer= analyzer
+        self.display_only = should_display_only
+        self.analyzer: va.PeriodAnalyzer = analyzer
+        self.conn = conn
 
     def get_last_trades(self):
         now = datetime.datetime.utcnow()
@@ -41,7 +42,8 @@ class Checker:
 
         begin = minute_edge - datetime.timedelta(seconds=self.trade_period)
         qry = f"SELECT * FROM {self.table} WHERE time >= '{begin}' and time < '{minute_edge}' ORDER BY trade_id ASC"
-        self.trades = sc.do_query(qry)
+        self.trades = sc.do_query_with(conn=self.conn, query=qry)
+        self.conn.close()
 
     def analyze_trades(self):
         self.analyzer.set_trades(self.trades)
@@ -64,7 +66,7 @@ class Checker:
             trade = self.trades[-1]
         except IndexError:
             qry = f'SELECT * from {self.table} ORDER BY trade_id DESC LIMIT 1'
-            trade = sc.do_query(qry)[0]
+            trade = sc.do_query_with(conn=self.conn, query=qry)[0]
 
         trade_time = trade['time']
         trade_id = trade['trade_id']
@@ -80,7 +82,8 @@ class Checker:
             else:
                 self.alert_bot.sendMessage(chat_id=ERROR_CHAT_ID, text=msg)
 
-    def heartbeat(self):
+    @staticmethod
+    def heartbeat():
         now = datetime.datetime.utcnow()
         msg = f'\n{now.hour}:00' if now.minute == 0 else '.'
         print(msg, end='', flush=True)
@@ -100,10 +103,15 @@ if __name__ == '__main__':
     print(f'Checking every {FREQUENCY} seconds.  Trade age limit: {TRADE_AGE}.  Table: {TABLE}')
     print(f'Whale threshold:  {WHALE_SIZE_THRESHOLD}')
 
-    analyzer = va.PeriodAnalyzer()
-    alert_bot = telegram.Bot(token=TOKEN)
-    checker = Checker(display_only, analyzer=analyzer, alert_bot=alert_bot)
+    vol_analyzer = va.PeriodAnalyzer()
+    telegram_bot = telegram.Bot(token=TOKEN)
     host = socket.gethostname()
+    if host == 'JB-MBP-15':
+        host = 'debian_from_mac'
+
+    db_conn = sc.connection(database=host)
+
+    checker = Checker(display_only, analyzer=vol_analyzer, alert_bot=telegram_bot, conn=db_conn)
 
     while True:
         seconds_into_minute = time.localtime().tm_sec
@@ -116,7 +124,7 @@ if __name__ == '__main__':
             checker.heartbeat()
 
         except KeyError:
-            alert_bot.sendMessage(chat_id=ERROR_CHAT_ID, text=f'Error on {host}')
+            telegram_bot.sendMessage(chat_id=ERROR_CHAT_ID, text=f'Error on {host}')
             traceback.print_exc()
             if checker.analyzer.raw_trades is not None:
                 print(checker.analyzer.raw_trades)
@@ -124,5 +132,5 @@ if __name__ == '__main__':
                 print(checker.analyzer.trades_df.head())
 
         except Exception:
-            alert_bot.sendMessage(chat_id=ERROR_CHAT_ID, text=f'Error on {host}')
+            telegram_bot.sendMessage(chat_id=ERROR_CHAT_ID, text=f'Error on {host}')
             traceback.print_exc()
