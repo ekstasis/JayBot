@@ -73,10 +73,7 @@ if __name__ == '__main__':
         print("\n*** LIVE LIVE LIVE LIVE ***\n")
 
 
-    if socket.gethostname() == 'debian':
-        product_list = 'XLM-USD'
-    else:
-        product_list = list(products.keys())
+    product_list = 'XLM-USD'
 
     channel_list = Channel('matches', product_list)
     event_loop = asyncio.get_event_loop()
