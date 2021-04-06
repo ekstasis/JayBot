@@ -4,7 +4,6 @@ import socket
 
 import pymysql as pms
 
-
 databases = {
     'JB-MBP-15': {'host': '127.0.0.1', 'port': 3306,
                   'user': 'gobot', 'password': 'goldenboy',
@@ -17,7 +16,11 @@ databases = {
     'debian_from_mac': {'host': '192.168.1.121', 'port': 3306,
                         'user': 'james', 'password': 'doingbots',
                         'db': 'JayBot', 'charset': 'utf8mb4',
-                        'cursorclass': pms.cursors.DictCursor}
+                        'cursorclass': pms.cursors.DictCursor},
+    'jaybizserver': {'host': '127.0.0.1', 'unix_socket': '/var/run/mysqld/mysqld.sock',
+                     'user': 'james', 'password': 'doing99bots',
+                     'db': 'JayBiz', 'charset': 'utf8mb4',
+                     'cursorclass': pms.cursors.DictCursor}
 }
 
 
