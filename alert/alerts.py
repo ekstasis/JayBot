@@ -4,8 +4,8 @@ import logging
 import pandas as pd
 
 import sql_client as sc
-from messenger import TelegramChat
-from analyzers import PeriodAnalyzer, Results
+from .messenger import TelegramChat
+from .analyzers import PeriodAnalyzer, Results
 import util
 
 
@@ -131,7 +131,6 @@ class HourAlert(Alert):
         return df
 
     def time_to_run(self) -> bool:
-        # return True  # for testing
         now = dt.datetime.utcnow()
 
         if now.minute != 0 or now.hour == self.last_hour_run:

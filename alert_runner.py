@@ -3,10 +3,10 @@ import time
 import logging
 import datetime as dt
 
-import alerts
-from analyzers import PeriodAnalyzer
+import alert.alerts as alerts
+from alert.analyzers import PeriodAnalyzer
 import util
-import messenger as chat
+import alert.messenger as chat
 
 
 def init_logging(level):
