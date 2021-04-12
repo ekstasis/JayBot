@@ -1,3 +1,4 @@
+import sys
 import time
 import logging
 import datetime as dt
@@ -8,8 +9,7 @@ import util
 import messenger as chat
 
 
-def init_logging():
-    level = logging.INFO
+def init_logging(level):
     log_format = '%(levelname)s %(asctime)s %(module)s: %(message)s'
     log_time_format = '%H:%M:%S'
     logging.basicConfig(level=level, format=log_format, datefmt=log_time_format)
@@ -22,7 +22,14 @@ def heartbeat():
 
 
 if __name__ == '__main__':
-    init_logging()
+    args = sys.argv
+    debug = False
+    if len(args) >= 2:
+        debug = args[1] == 'debug'
+    if debug:
+        init_logging(logging.DEBUG)
+    else:
+        init_logging(logging.INFO)
     logging.info('Starting Alerts ...')
 
     min_vol_chat = chat.TelegramChat.create_bot('1_min_vol')

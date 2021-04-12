@@ -149,12 +149,3 @@ class HourAlert(Alert):
         else:
             logging.debug(results.report())
             return None
-
-    def run(self):
-        super().run()
-
-        # delta = now - self.last_run_time
-        # seconds = delta.seconds
-        # print(self.freq, seconds)
-        # should_run = seconds >= self.freq
-        # return should_run
