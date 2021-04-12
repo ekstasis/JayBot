@@ -24,11 +24,11 @@ databases = {
 }
 
 
-def connection(database=None):
-    if database is None:
+def connection(host=None):
+    if host is None:
         info = databases[socket.gethostname()]
     else:
-        info = databases[database]
+        info = databases[host]
 
     return pms.connect(**info)
 
