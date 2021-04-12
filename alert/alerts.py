@@ -1,6 +1,5 @@
 import datetime as dt
 import logging
-import time
 
 import pandas as pd
 
@@ -11,7 +10,7 @@ import util
 
 
 class Alert:
-    def __init__(self, name: str, table:str, messenger: TelegramChat, analyzer: PeriodAnalyzer, conn=None):
+    def __init__(self, name: str, table: str, messenger: TelegramChat, analyzer: PeriodAnalyzer, conn=None):
         self.name = name
         self.table = table
         if conn is None:
@@ -20,6 +19,7 @@ class Alert:
             self.conn = conn
         self.messenger = messenger
         self.analyzer = analyzer
+        self.threshold = 0
 
     def create_connection(self):
         host = util.get_host()
@@ -137,7 +137,7 @@ class HourAlert(Alert):
         if now.minute != 0 or now.hour == self.last_hour_run:
             return False
 
-        self.last_run_hour = now.hour
+        self.last_hour_run = now.hour
         return True
 
     def should_alert(self, results) -> str:
