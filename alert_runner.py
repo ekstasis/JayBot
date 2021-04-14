@@ -51,7 +51,9 @@ if __name__ == '__main__':
     diff_1h = alerts.HourAlert(name='1h_diff', table=table, messenger=hour_diff_chat, analyzer=analyzer)
     diff_1h.set_threshold(0)
 
-    alerts = [vol_1m, diff_1m, diff_1h]
+    diff_4h = alerts.FourHourAlert(name='4h_diff', table=table, messenger=hour_diff_chat, analyzer=analyzer)
+
+    alerts = [vol_1m, diff_1m, diff_1h, diff_4h]
 
     while True:
         seconds_into_minute = time.localtime().tm_sec

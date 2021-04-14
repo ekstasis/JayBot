@@ -31,9 +31,6 @@ class Alert:
     def should_alert(self, results) -> str:
         return None
 
-    # def compose_message(self, results) -> str:
-    #     return None
-    #
     def send_message(self, msg: str):
         self.messenger.send_message(msg)
 
@@ -44,8 +41,7 @@ class Alert:
         if not self.time_to_run():
             logging.debug(f'{self.name}, NOT RUN')
             return
-
-        if self.time_to_run():
+        else:
             results = self.analyze()
             msg = self.should_alert(results)
             if msg is not None:
@@ -80,23 +76,20 @@ class MinuteAlert(Alert):
         return self.analyzer.analyze()
 
     def should_alert(self, results) -> str:
-        if results.maker_buys > self.threshold or results.maker_buys > self.threshold:
+        if results.maker_buys > self.threshold or results.maker_sells > self.threshold:
             logging.info(f'{self.name}: {results.report()}')
             return results.report()
         else:
-            logging.debug(f'{self.name}: {results.report()}')
             return None
 
 
 class MinuteDiffAlert(MinuteAlert):
     def should_alert(self, results) -> str:
         diff = abs(results.maker_buys - results.maker_sells)
-        logging.debug(f'diff: {diff}')
         if diff > self.threshold:
             logging.info(results.report())
             return results.report()
         else:
-            logging.debug(results.report())
             return None
 
 
@@ -132,12 +125,7 @@ class HourAlert(Alert):
 
     def time_to_run(self) -> bool:
         now = dt.datetime.utcnow()
-
-        if now.minute != 0 or now.hour == self.last_hour_run:
-            return False
-
-        self.last_hour_run = now.hour
-        return True
+        return now.minute == 0 and now.hour != self.last_hour_run
 
     def should_alert(self, results) -> str:
         diff = abs(results.maker_buys - results.maker_sells)
@@ -146,5 +134,31 @@ class HourAlert(Alert):
             logging.info(results.report())
             return results.report()
         else:
-            logging.debug(results.report())
             return None
+
+    def run(self):
+        if not self.time_to_run():
+            logging.debug(f'{self.name}, NOT RUN')
+            return
+        else:
+            self.last_hour_run = dt.datetime.utcnow().hour
+            results = self.analyze()
+            msg = self.should_alert(results)
+            if msg is not None:
+                self.send_message(msg)
+            logging.debug(f'{self.name}, ran')
+
+class FourHourAlert(HourAlert):
+    def init_analyzer(self):
+        now = dt.datetime.utcnow()
+        minute_edge = now.replace(second=0, microsecond=0)
+        begin = minute_edge - dt.timedelta(seconds=4*3600)
+        qry = f"SELECT * FROM {self.table} WHERE time >= '{begin}' and time < '{minute_edge}' ORDER BY trade_id ASC"
+        trades = sc.do_query_with(conn=self.conn, query=qry)
+        self.conn.close()
+        df = self.create_dataframe(trades)
+        self.analyzer.set_trades_df(df)
+
+    def time_to_run(self) -> bool:
+        now = dt.datetime.utcnow()
+        return now.minute == 0 and now.hour != self.last_hour_run and now.hour % 4 == 0
