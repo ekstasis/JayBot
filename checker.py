@@ -9,8 +9,7 @@ import telegram
 # pdb_attach.listen(50000)  # Listen on port 50000.
 
 import sql_client as sc
-import volume_analyzer as va
-
+from alert import analyzers as va
 
 FREQUENCY = 60  # seconds
 TRADE_AGE = 60  # seconds
@@ -106,7 +105,7 @@ if __name__ == '__main__':
     if host == 'JB-MBP-15':
         host = 'debian_from_mac'
 
-    db_conn = sc.connection(database=host)
+    db_conn = sc.connection(host=host)
 
     checker = Checker(display_only, analyzer=vol_analyzer, alert_bot=telegram_bot, conn=db_conn)
 
@@ -125,8 +124,8 @@ if __name__ == '__main__':
             traceback.print_exc()
             if checker.analyzer.raw_trades is not None:
                 print(checker.analyzer.raw_trades)
-            if checker.analyzer.trades_df is not None:
-                print(checker.analyzer.trades_df.head())
+            if checker.analyzer.df is not None:
+                print(checker.analyzer.df.head())
 
         except Exception:
             telegram_bot.sendMessage(chat_id=ERROR_CHAT_ID, text=f'Error on {host}')
