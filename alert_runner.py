@@ -61,7 +61,7 @@ if __name__ == '__main__':
         seconds_into_minute = time.localtime().tm_sec
         time.sleep(60 - seconds_into_minute)
         logging.debug('== START ==')
-        if logging.getLogger().level == logging.INFO:
+        if logging.getLogger().level > logging.INFO:
             heartbeat()
         try:
             for alert in alerts:
