@@ -8,7 +8,8 @@ CHAT_IDS = {'1_min_vol': -564132609,
             '1_min_diff': -500072176,
             '1_hr_diff': -599505475,
             'JayBotErrors': -533383147,
-            'Test': -511211282
+            'Test': -511211282,
+            'FOUR_HOUR': -537581487
             }
 
 TOKEN = '1694974417:AAE8NAZRqD-AQBaXkw2tJjgnC7NCIa6Ss0I'

@@ -32,28 +32,30 @@ if __name__ == '__main__':
         init_logging(logging.INFO)
     logging.info('Starting Alerts ...')
 
-    min_vol_chat = chat.TelegramChat.create_bot('1_min_vol')
-    min_diff_chat = chat.TelegramChat.create_bot('1_min_diff')
-    hour_diff_chat = chat.TelegramChat.create_bot('1_hr_diff')
-
-    test_chat = chat.TelegramChat.create_bot('Test')
-    error_chat = chat.TelegramChat.create_bot('JayBotErrors')
+    # test_chat = chat.TelegramChat.create_bot('Test')
 
     analyzer = PeriodAnalyzer()
     table = 'matches_xlm'
 
+    min_diff_chat = chat.TelegramChat.create_bot('1_min_diff')
     diff_1m = alerts.MinuteDiffAlert(name='1m diff', table=table, messenger=min_diff_chat, analyzer=analyzer)
     diff_1m.set_threshold(300000)
 
+    min_vol_chat = chat.TelegramChat.create_bot('1_min_vol')
     vol_1m = alerts.MinuteAlert(name='1m_vol', table=table, messenger=min_vol_chat, analyzer=analyzer)
     vol_1m.set_threshold(600000)
 
+    hour_diff_chat = chat.TelegramChat.create_bot('1_hr_diff')
     diff_1h = alerts.HourAlert(name='1h_diff', table=table, messenger=hour_diff_chat, analyzer=analyzer)
     diff_1h.set_threshold(0)
 
-    diff_4h = alerts.FourHourAlert(name='4h_diff', table=table, messenger=hour_diff_chat, analyzer=analyzer)
+    four_hour_chat = chat.TelegramChat.create_bot('FOUR_HOUR')
+    diff_4h = alerts.FourHourAlert(name='4h_diff', table=table, messenger=four_hour_chat, analyzer=analyzer)
+    diff_1h.set_threshold(0)
 
     alerts = [vol_1m, diff_1m, diff_1h, diff_4h]
+
+    error_chat = chat.TelegramChat.create_bot('JayBotErrors')
 
     while True:
         seconds_into_minute = time.localtime().tm_sec
