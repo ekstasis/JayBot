@@ -17,7 +17,7 @@ databases = {
                         'user': 'james', 'password': 'doingbots',
                         'db': 'JayBot', 'charset': 'utf8mb4',
                         'cursorclass': pms.cursors.DictCursor},
-    'jaybizserver': {'host': '66.228.58.116', 'port': 3306,
+    'jaybizserver': {'host': '127.0.0.1', 'unix_socket': '/run/mysqld/mysqld.sock',
                      'user': 'james', 'password': 'Ccess9atabase',
                      'db': 'JayBiz', 'charset': 'utf8mb4',
                      'cursorclass': pms.cursors.DictCursor}
