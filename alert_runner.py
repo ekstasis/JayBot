@@ -61,8 +61,13 @@ if __name__ == '__main__':
         seconds_into_minute = time.localtime().tm_sec
         time.sleep(60 - seconds_into_minute)
         logging.debug('== START ==')
+
+        if util.get_host() == 'jaybizserver':
+            time.sleep(3)
+
         if logging.getLogger().level > logging.INFO:
             heartbeat()
+
         try:
             for alert in alerts:
                 alert.run()
