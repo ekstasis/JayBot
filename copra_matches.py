@@ -1,7 +1,6 @@
 import asyncio
 import time
 import sys
-import socket
 
 from copra.websocket import Channel, Client
 import sql_client as sc
@@ -9,19 +8,20 @@ from products import products
 
 
 def write_record(message, conn, should_test):
+    """Takes a "match" message from Coinbase Pro websocket and writes it to MYSQL database
+    """
     if message['type'] != 'match':
         if message['type'] == 'subscriptions':
             print(message)
             if not should_test:
-                time.sleep(3)
+                time.sleep(3)  # gives user a chance to quit if forgot to start in Test mode
         return
 
-
-    trade_type = "buy" if message['side'] == "sell" else "sell"
+    trade_type = "buy" if message['side'] == "sell" else "sell"  # record TAKER side of trade
     trade_id = int(message['trade_id'])
     product_id = message['product_id']
 
-    if should_test:
+    if should_test:  # separate mysql table for testing
         table = 'matches_test'
     else:
         table = products[product_id]
@@ -37,14 +37,8 @@ def write_record(message, conn, should_test):
     if rows != 1:
         raise Exception('Failed to write to database')
     else:
-        print(f"Wrote trade {trade_id} to table '{table}' ({product_id})")
+        print(f"Wrote trade {trade_id} to table '{table}' ({product_id})")  # log to stdout
         conn.commit()
-        # written_size = sc.do_query_with(conn, f"SELECT size FROM {table} WHERE trade_id = '{trade_id}'")[0]['size']
-        # msg_size = float(message['size'])
-        # if written_size == msg_size:
-        #     print("good")
-        # else:
-        #     print("BABABADBABDKJSLDFLKSJDFLKSJDFLKSJDFLKSJDFLKSJDFLKSDJF")
 
 
 class WSClient(Client):
@@ -72,12 +66,15 @@ if __name__ == '__main__':
     else:
         print("\n*** LIVE LIVE LIVE LIVE ***\n")
 
-
-    product_list = 'XLM-USD'
-
+    product_list = ['XLM-USD', 'ETH-USD']
     channel_list = Channel('matches', product_list)
-    event_loop = asyncio.get_event_loop()
+
     db_conn = sc.connection()
+    host = sc.get_connect_info(db_conn)
+    print(f'Host: {host["host"]}\nDB: {host["db"]}\n')
+
+    event_loop = asyncio.get_event_loop()
+
     client = WSClient(loop=event_loop, channels=channel_list, msg_handler=write_record, conn=db_conn, should_test=test)
 
     try:
