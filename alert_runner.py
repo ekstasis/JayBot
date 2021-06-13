@@ -71,7 +71,8 @@ if __name__ == '__main__':
                                    analyzer=analyzer, test=should_test)
     eth_diff_4h.set_threshold(0)
 
-    alerts = [eth_diff_1m, eth_diff_1h, eth_diff_4h]
+    alerts = [xlm_diff_1m, xlm_diff_1h, xlm_diff_4h]
+    # alerts += [eth_diff_1m, eth_diff_1h, eth_diff_4h]
 
     error_chat = TelegramChat(chat_id=OTHER_CHAT_IDS['JayBotErrors'])
 
