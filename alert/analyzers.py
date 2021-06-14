@@ -1,8 +1,6 @@
 import datetime as dt
 from dateutil import tz
 
-import pandas as pd
-
 
 class Results:
     def __init__(self):
@@ -10,8 +8,8 @@ class Results:
         self.end_time: dt.datetime = None
         self.open_price = 0.0
         self.close_price = 0.0
-        self.maker_buys = 0
-        self.maker_sells = 0
+        self.maker_buys = 0.0
+        self.maker_sells = 0.0
 
     def report(self):
         utz_tz = tz.gettz('UTC')
@@ -21,22 +19,36 @@ class Results:
         local_time_str = local_time.strftime('%m/%d %H:%M')
         utc_time_str = start_time.strftime('%m/%d %H:%M')
 
+        lines = self.report_helper()
+        lines = lines + [f'{local_time_str}',
+                         f'{utc_time_str} (UTC)']
+
+        return '\n'.join(lines)
+
+    def report_helper(self):
+        """ Puts together the volume info of the message, dealing with formatting for large vs small numbers
+        """
         maker_buys_larger = self.maker_buys > self.maker_sells
         diff_str = "extra buys" if maker_buys_larger else "extra sells"
-        diff = self.maker_buys - self.maker_sells if maker_buys_larger else self.maker_sells - self.maker_buys
-        diff_k = int(round(diff / 1000))
-        buys_k = int(round(self.maker_buys / 1000))
-        sells_k = int(round(self.maker_sells / 1000))
+        raw_diff = self.maker_buys - self.maker_sells if maker_buys_larger else self.maker_sells - self.maker_buys
 
-        lines = [
-            f'{diff_k:,}K {diff_str}',
-            f'{self.open_price:.6} -> {self.close_price:.6}',
-            f'Buys: {buys_k:,}K',
-            f'Sells: {sells_k:,}K',
-            f'{local_time_str}',
-            f'{utc_time_str} (UTC)'
-        ]
-        return '\n'.join(lines)
+        diff = raw_diff if raw_diff < 1_000 else raw_diff / 1_000
+        buys = self.maker_buys if self.maker_buys < 1_000 else self.maker_buys / 1_000
+        sells = self.maker_sells if self.maker_sells < 1_000 else self.maker_sells / 1_000
+        diff = int(round(diff))
+        buys = int(round(buys))
+        sells = int(round(sells))
+
+        lines = [ f'{diff:,}K {diff_str}' ] if raw_diff > 1_000 else [f'{diff:,} {diff_str}']
+        lines.append(f'{self.open_price:.6} -> {self.close_price:.6}')
+        buys_line = f'Buys: {buys:,}'
+        sells_line = f'Sells: {sells:,}'
+        if self.maker_buys > 1_000:
+            buys_line += 'K'
+        if self.maker_sells > 1_000:
+            sells_line += 'K'
+        lines += [buys_line, sells_line]
+        return lines
 
 
 class PeriodAnalyzer:

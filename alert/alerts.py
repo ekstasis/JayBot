@@ -7,17 +7,23 @@ import sql_client as sc
 from .messenger import TelegramChat
 from .analyzers import PeriodAnalyzer, Results
 import util
+from .messenger import OTHER_CHAT_IDS
 
 
 class Alert:
-    def __init__(self, name: str, table: str, messenger: TelegramChat, analyzer: PeriodAnalyzer, conn=None):
+    def __init__(self, name: str, table: str, messenger: TelegramChat, analyzer: PeriodAnalyzer, conn = None, test: bool = False):
         self.name = name
         self.table = table
         if conn is None:
             self.conn = self.create_connection()
         else:
             self.conn = conn
-        self.messenger = messenger
+
+        if test:
+            self.messenger = TelegramChat(chat_id=OTHER_CHAT_IDS['Test'])
+        else:
+            self.messenger = messenger
+
         self.analyzer = analyzer
         self.threshold = 0
 
