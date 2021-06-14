@@ -45,14 +45,14 @@ class Alert:
 
     def run(self):
         if not self.time_to_run():
-            logging.info(f'{self.name}, NOT RUN')
+            logging.debug(f"{self.name}, didn't run")
             return
         else:
             results = self.analyze()
             msg = self.should_alert(results)
             if msg is not None:
                 self.send_message(msg)
-            logging.info(f'{self.name}, ran')
+            logging.info(f'{self.name}, RAN')
 
 
 class MinuteAlert(Alert):
@@ -143,7 +143,7 @@ class HourAlert(Alert):
 
     def run(self):
         if not self.time_to_run():
-            logging.info(f'{self.name}, NOT RUN')
+            logging.debug(f"{self.name}, didn't run")
             return
         else:
             self.last_hour_run = dt.datetime.utcnow().hour
@@ -151,7 +151,7 @@ class HourAlert(Alert):
             msg = self.should_alert(results)
             if msg is not None:
                 self.send_message(msg)
-            logging.info(f'{self.name}, ran')
+            logging.info(f'{self.name}, RAN')
 
 class FourHourAlert(HourAlert):
     def init_analyzer(self):
